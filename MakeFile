@@ -1,0 +1,52 @@
+include .env
+export
+
+.PHONY: env-up env-down env-cleanup
+
+PROJECT_ROOT := $(shell cd)
+
+env-up:
+	@if not exist "$(PROJECT_ROOT)\out\pgdata" mkdir "$(PROJECT_ROOT)\out\pgdata"
+	@docker compose up -d todo-postgres
+
+env-down:
+	@docker compose down todo-postgres
+
+# Работает кривовато из-за плохой совместимости Batch и MakeFile
+env-cleanup:
+	@if exist out\pgdata (
+		@echo Directory exists &
+		@set /p confirm="Are you sure you want to delete this directory? This will delete the data. (Y/N): " &
+		@if /i "!confirm!"=="Y" (
+			@docker compose down todo-postgres &
+			@rmdir /s /q out\pgdata &
+			@echo File successfully deleted
+		) else (echo Operation cancelled)
+	@) else (echo irectory not found)
+
+# Приписка после таргета seq= доделать проверку что переменная seq введена
+migrate-create:
+	@docker compose run --rm todo-postgres-migrate \
+		create \
+		-ext sql \
+		-dir /migrations \
+		-seq "$(seq)"
+
+migrate-up:
+	@make migrate-action action=up
+
+migrate-down:
+	@make migrate-action action=down
+
+# Приписка после таргета action= доделать проверку что переменная action введена
+migrate-action:
+	@docker compose run --rm todo-postgres-migrate \
+		-path /migrations \
+		-database postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@todo-postgres:5432/${POSTGRES_DB}?sslmode=disable \
+		"${action}"
+
+env-port-forward:
+	@docker compose up -d port-forwarder
+
+env-port-close:
+	@docker compose down port-forwarder
