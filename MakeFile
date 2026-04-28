@@ -1,9 +1,11 @@
 include .env
-export
+export LOGGER_FOLDER = $(PROJECT_ROOT)/out/logs
+export POSTGRES_HOST := localhost
+export PROJECT_ROOT := $(CURDIR)
 
 .PHONY: env-up env-down env-cleanup
 
-PROJECT_ROOT := $(shell cd)
+
 
 env-up:
 	@if not exist "$(PROJECT_ROOT)\out\pgdata" mkdir "$(PROJECT_ROOT)\out\pgdata"
@@ -18,7 +20,7 @@ env-cleanup:
 		@echo Directory exists &
 		@set /p confirm="Are you sure you want to delete this directory? This will delete the data. (Y/N): " &
 		@if /i "!confirm!"=="Y" (
-			@docker compose down todo-postgres &
+			@docker compose down todo-postgres port-forwarder &
 			@rmdir /s /q out\pgdata &
 			@echo File successfully deleted
 		) else (echo Operation cancelled)
@@ -50,3 +52,7 @@ env-port-forward:
 
 env-port-close:
 	@docker compose down port-forwarder
+
+todo-run:
+	go mod tidy && \
+	@go run .\cmd\todoapp\main.go
