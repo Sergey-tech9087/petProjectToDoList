@@ -6,11 +6,16 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
+	core_config "github.com/Sergey-tech9087/petProjectToDoList/internal/core/config"
 	core_logger "github.com/Sergey-tech9087/petProjectToDoList/internal/core/logger"
 	core_pgx_pool "github.com/Sergey-tech9087/petProjectToDoList/internal/core/repository/postgres/pool/pgx"
 	core_http_middleware "github.com/Sergey-tech9087/petProjectToDoList/internal/core/transport/http/middleware"
 	core_http_server "github.com/Sergey-tech9087/petProjectToDoList/internal/core/transport/http/server"
+	task_postgres_repository "github.com/Sergey-tech9087/petProjectToDoList/internal/features/tasks/repository/postgres"
+	task_service "github.com/Sergey-tech9087/petProjectToDoList/internal/features/tasks/service"
+	tasks_transport_http "github.com/Sergey-tech9087/petProjectToDoList/internal/features/tasks/transport/http"
 	users_postgres_repository "github.com/Sergey-tech9087/petProjectToDoList/internal/features/users/repository/postgres"
 	users_service "github.com/Sergey-tech9087/petProjectToDoList/internal/features/users/service"
 	users_transport_http "github.com/Sergey-tech9087/petProjectToDoList/internal/features/users/transport/http"
@@ -18,6 +23,9 @@ import (
 )
 
 func main() {
+	cfg := core_config.NewConfigMust()
+	time.Local = cfg.TimeZone
+
 	ctx, cancel := signal.NotifyContext(
 		context.Background(),
 		syscall.SIGINT, syscall.SIGTERM,
@@ -31,6 +39,8 @@ func main() {
 		os.Exit(1)
 	}
 	defer logger.Close()
+
+	logger.Debug("application time zone", zap.Any("zone", time.Local))
 
 	logger.Debug("Initialized postgres connection pool")
 	pool, err := core_pgx_pool.NewPool(
@@ -46,11 +56,14 @@ func main() {
 	logger.Debug("Initializing feature", zap.String("feature", "users"))
 	usersRepositury := users_postgres_repository.NewUsersRepository(pool)
 	usersService := users_service.NewUsersService(usersRepositury)
+	usersTransportHTTP := users_transport_http.NewUsersHTTPHandler(usersService)
 
-	userTransportHTTP := users_transport_http.NewUsersHTTPHandler(usersService)
+	logger.Debug("Initializing feature", zap.String("feature", "tasks"))
+	tasksRepositury := task_postgres_repository.NewTasksRepository(pool)
+	tasksService := task_service.NewTasksService(tasksRepositury)
+	tasksTransportHTTP := tasks_transport_http.NewTasksHTTPHandler(tasksService)
 
 	logger.Debug("Initializing HTTP server")
-
 	httpServer := core_http_server.NewHTTPServer(
 		core_http_server.NewConfigMust(),
 		logger,
@@ -61,7 +74,8 @@ func main() {
 	)
 
 	apiVersionRouteV1 := core_http_server.NewAPIVersionRouter(core_http_server.ApiVersion1)
-	apiVersionRouteV1.RegisterRoutes(userTransportHTTP.Routes()...)
+	apiVersionRouteV1.RegisterRoutes(usersTransportHTTP.Routes()...)
+	apiVersionRouteV1.RegisterRoutes(tasksTransportHTTP.Routes()...)
 
 	// apiVersionRouteV2 := core_http_server.NewAPIVersionRouter(
 	// 	core_http_server.ApiVersion2,

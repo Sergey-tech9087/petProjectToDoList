@@ -47,6 +47,16 @@ migrate-action:
 		-database postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@todo-postgres:5432/${POSTGRES_DB}?sslmode=disable \
 		"${action}"
 
+logs-cleanup:
+	@if exist out\logs (
+		@echo Directory exists &
+		@set /p confirm="Are you sure you want to delete this directory? This will delete the logs. (Y/N): " &
+		@if /i "!confirm!"=="Y" (
+			@rmdir /s /q out\logs &
+			@echo Directory successfully deleted
+		) else (echo Operation cancelled)
+	@) else (echo irectory not found)
+
 env-port-forward:
 	@docker compose up -d port-forwarder
 

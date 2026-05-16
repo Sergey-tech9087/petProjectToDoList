@@ -26,5 +26,5 @@ CREATE TABLE todo.tasks (
         (completed=TRUE AND completed_at IS NOT NULL AND completed_at >= created_at)
     ),
 
-    autor_user_id   INTEGER         NOT NULL    REFERENCES todo.users(id)
+    author_user_id   INTEGER         NOT NULL    REFERENCES todo.users(id)
 );
