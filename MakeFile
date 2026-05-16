@@ -66,3 +66,9 @@ env-port-close:
 todo-run:
 	go mod tidy && \
 	@go run .\cmd\todoapp\main.go
+
+todo-deploy:
+	@docker compose up -d --build todoapp
+
+todo-undeploy:
+	@docker compose down todoapp
