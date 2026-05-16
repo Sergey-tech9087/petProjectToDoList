@@ -13,6 +13,9 @@ import (
 	core_pgx_pool "github.com/Sergey-tech9087/petProjectToDoList/internal/core/repository/postgres/pool/pgx"
 	core_http_middleware "github.com/Sergey-tech9087/petProjectToDoList/internal/core/transport/http/middleware"
 	core_http_server "github.com/Sergey-tech9087/petProjectToDoList/internal/core/transport/http/server"
+	statistics_postgres_repository "github.com/Sergey-tech9087/petProjectToDoList/internal/features/statistics/repository/postgres"
+	statistics_service "github.com/Sergey-tech9087/petProjectToDoList/internal/features/statistics/service"
+	statistics_transport_http "github.com/Sergey-tech9087/petProjectToDoList/internal/features/statistics/transport/http"
 	task_postgres_repository "github.com/Sergey-tech9087/petProjectToDoList/internal/features/tasks/repository/postgres"
 	task_service "github.com/Sergey-tech9087/petProjectToDoList/internal/features/tasks/service"
 	tasks_transport_http "github.com/Sergey-tech9087/petProjectToDoList/internal/features/tasks/transport/http"
@@ -63,6 +66,11 @@ func main() {
 	tasksService := task_service.NewTasksService(tasksRepositury)
 	tasksTransportHTTP := tasks_transport_http.NewTasksHTTPHandler(tasksService)
 
+	logger.Debug("Initializing feature", zap.String("feature", "statistics"))
+	statisticsRepositury := statistics_postgres_repository.NewStatisticsRepository(pool)
+	statisticsService := statistics_service.NewStatisticsService(statisticsRepositury)
+	statisticsTransportHTTP := statistics_transport_http.NewStatisticsHTTPHandler(statisticsService)
+
 	logger.Debug("Initializing HTTP server")
 	httpServer := core_http_server.NewHTTPServer(
 		core_http_server.NewConfigMust(),
@@ -76,6 +84,7 @@ func main() {
 	apiVersionRouteV1 := core_http_server.NewAPIVersionRouter(core_http_server.ApiVersion1)
 	apiVersionRouteV1.RegisterRoutes(usersTransportHTTP.Routes()...)
 	apiVersionRouteV1.RegisterRoutes(tasksTransportHTTP.Routes()...)
+	apiVersionRouteV1.RegisterRoutes(statisticsTransportHTTP.Routes()...)
 
 	// apiVersionRouteV2 := core_http_server.NewAPIVersionRouter(
 	// 	core_http_server.ApiVersion2,
