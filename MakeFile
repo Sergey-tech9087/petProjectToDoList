@@ -68,4 +68,7 @@ todo-run:
 	@go run .\cmd\todoapp\main.go
 
 todo-deploy:
-	docker compose up -d --build todoapp
+	@docker compose up -d --build todoapp
+
+todo-undeploy:
+	@docker compose down todoapp
