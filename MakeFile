@@ -63,6 +63,14 @@ env-port-forward:
 env-port-close:
 	@docker compose down port-forwarder
 
+swagger-gen:
+	@docker compose run --rm swagger \
+		init \
+		-g cmd/todoapp/main.go \
+		-o docs \
+		--parseInternal \
+		--parseDependency
+
 todo-run:
 	go mod tidy && \
 	@go run .\cmd\todoapp\main.go
