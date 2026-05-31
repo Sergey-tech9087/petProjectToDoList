@@ -49,6 +49,25 @@ func (r *PatchTaskRequest) Validate() error {
 
 type PatchTaskResponse TasksDTOResponse
 
+// PatchTask 		godoc
+// @Summary 		Обновить задачу
+// @Description 	Изменение информации об уже существующей в системе задаче
+// @Description 	### Логика обновления полей (Tree-state logic):
+// @Description 	1. **Поле не передано**: `description` игнорируется, значение в БД не меняется
+// @Description 	2. **Явно передано значение**: `"description": "Rework pet project"` - устанавливается новое описание
+// @Description		3. **Передан null**: `"description": null` - очищает поле в БД (set to NULL)
+// @Description		Ограничения: `title` и `completed` не могут быть выставлены как null
+// @Tags 			tasks
+// @Accept			json
+// @Produce 		json
+// @Param 			id path int 				  true				"ID изменяемой задачи"
+// @Param 			request body PatchTaskRequest true 				"PatchTask тело запроса"
+// @Success 		200	{object} PatchTaskResponse 					"Успешное измененная задача"
+// @Failure 		400 {object} core_http_response.ErrorResponse 	"Bad request"
+// @Failure 		404 {object} core_http_response.ErrorResponse 	"Task not found"
+// @Failure 		409 {object} core_http_response.ErrorResponse 	"Conflict"
+// @Failure 		500 {object} core_http_response.ErrorResponse 	"Internal server error"
+// @Router 			/tasks/{id} [patch]
 func (h *TasksHTTPHandler) PatchTask(rw http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	log := core_logger.FromContext(ctx)
